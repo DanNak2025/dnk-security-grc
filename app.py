@@ -4,189 +4,167 @@ import os
 import json
 
 # Configuration de la page
-st.set_page_config(page_title="BizGRC Multi-Clients", layout="wide")
-st.title("🛡️ BizGRC - Plateforme GRC Multi-Clients")
+st.set_page_config(page_title="DNK Security - GRC Platform", layout="wide")
+st.title("🛡️ DNK Security - Plateforme GRC Interne")
 
-# --- GESTION DE LA PERSISTANCE (DOSSIER CLIENTS) ---
-DATA_DIR = "clients_data"
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
+# --- CONTEXTE ET PERSISTANCE DES DONNÉES ---
+SAVE_FILE = "etat_grc.json"
 
-# Chargement des matrices Excel d'origine (Modèles de base)
+# Fonction pour charger l'avancement sauvegardé
+def load_grc_state():
+    if os.path.exists(SAVE_FILE):
+        with open(SAVE_FILE, "r") as f:
+            return json.load(f)
+    return {"controles_coches": {}, "risques": []}
+
+# Fonction pour sauvegarder l'avancement
+def save_grc_state(state):
+    with open(SAVE_FILE, "w") as f:
+        json.dump(state, f)
+
+# Initialisation de l'état
+if 'grc_state' not in st.session_state:
+    st.session_state.grc_state = load_grc_state()
+
+# Chargement de vos matrices Excel/CSV de référence
 @st.cache_data
-def load_base_template(filename):
+def load_excel_template(filename):
     if os.path.exists(filename):
         return pd.read_csv(filename)
     return None
 
-df_base_controls = load_base_template("1 - SOC2_ControlList - DNK Security.xlsx - Control List.csv")
-df_base_readiness = load_base_template("1 - SOC2_ControlList - DNK Security.xlsx - Readiness.csv")
+df_controls = load_excel_template("1 - SOC2_ControlList - DNK Security.xlsx - Control List.csv")
+df_readiness = load_excel_template("1 - SOC2_ControlList - DNK Security.xlsx - Readiness.csv")
+
+# --- MENU DE NAVIGATION ---
+menu = ["📊 Tableau de Bord & Readiness", "📋 Registre des Contrôles SOC2", "🎲 Registre des Risques"]
+choice = st.sidebar.selectbox("Navigation GRC", menu)
 
 # ----------------------------------------------------
-# GESTION DES CLIENTS (Sidebar)
+# 1. TABLEAU DE BORD & READINESS
 # ----------------------------------------------------
-st.sidebar.header("🏢 Gestion des Clients")
-
-# Liste des clients existants (basée sur les fichiers sauvegardés)
-existing_clients = [f.replace(".json", "") for f in os.listdir(DATA_DIR) if f.endswith(".json")]
-
-# Ajouter un nouveau client
-new_client = st.sidebar.text_input("➕ Ajouter un nouveau client :")
-if st.sidebar.button("Créer le compte client"):
-    if new_client and new_client not in existing_clients:
-        # Initialisation des données du client avec le modèle de base
-        initial_data = {
-            "nom": new_client,
-            "statuts_controles": {} # Stockera l'état {ID_Controle: True/False}
-        }
-        with open(os.path.join(DATA_DIR, f"{new_client}.json"), "w") as f:
-            json.dump(initial_data, f)
-        st.sidebar.success(f"Client '{new_client}' créé !")
-        st.rerun()
-
-# Sélection du client actif
-if existing_clients:
-    client_actif = st.sidebar.selectbox("🎯 Client Actif :", existing_clients)
-else:
-    client_actif = None
-    st.sidebar.warning("Veuillez créer un premier client pour commencer.")
-
-# Menu principal de navigation
-st.sidebar.markdown("---")
-menu = ["📊 Tableau de bord Client", "📋 Audit & Contrôles SOC2", "🎲 Registre des Risques Client"]
-choice = st.sidebar.selectbox("Navigation Menu", menu)
-
-# Chargement des données du client sélectionné
-def load_client_data(client_name):
-    path = os.path.join(DATA_DIR, f"{client_name}.json")
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            return json.load(f)
-    return None
-
-def save_client_data(client_name, data):
-    path = os.path.join(DATA_DIR, f"{client_name}.json")
-    with open(path, "w") as f:
-        json.dump(data, f)
-
-# ----------------------------------------------------
-# 1. TABLEAU DE BORD CLIENT
-# ----------------------------------------------------
-if choice == "📊 Tableau de bord Client":
-    if client_actif:
-        st.header(f"📊 Tableau de bord — {client_actif}")
-        client_data = load_client_data(client_actif)
+if choice == "📊 Tableau de Bord & Readiness":
+    st.header("📈 État de Préparation de l'Entreprise")
+    
+    if df_controls is not None:
+        total_controls = len(df_controls)
+        coches = st.session_state.grc_state.get("controles_coches", {})
+        total_valides = sum(1 for v in coches.values() if v is True)
         
-        if df_base_controls is not None:
-            total_controls = len(df_base_controls)
-            # Compter les contrôles cochés pour ce client
-            statuts = client_data.get("statuts_controles", {})
-            controles_valides = sum(1 for v in statuts.values() if v is True)
-            
-            # Calcul du score d'avancement réel du client
-            score_avancement = int((controles_valides / total_controls) * 100) if total_controls > 0 else 0
-            
-            col1, col2, col3 = st.columns(3)
-            col1.metric(label="Total des contrôles à auditer", value=total_controls)
-            col2.metric(label="Contrôles Validés", value=f"{controles_valides} / {total_controls}")
-            col3.metric(label="Score de Conformité SOC2", value=f"{score_avancement}%")
-            
-            st.progress(score_avancement / 100)
-            
-            # Affichage de la feuille "Readiness" de base pour référence
-            if df_base_readiness is not None:
-                st.subheader("🎯 Objectifs de préparation (Référentiel Global)")
-                st.dataframe(df_base_readiness, use_container_width=True)
-        else:
-            st.error("Modèle 'Control List.csv' introuvable.")
+        # Pourcentage de conformité réel
+        score_conformite = int((total_valides / total_controls) * 100) if total_controls > 0 else 0
+        total_risques = len(st.session_state.grc_state.get("risques", []))
+        
+        # Affichage des indicateurs clés (KPIs)
+        col1, col2, col3 = st.columns(3)
+        col1.metric(label="Contrôles SOC2 Audités", value=f"{total_valides} / {total_controls}")
+        col2.metric(label="Score de Conformité Global", value=f"{score_conformite}%")
+        col3.metric(label="Risques Internes Identifiés", value=total_risques)
+        
+        st.markdown("**Progression de la mise en conformité :**")
+        st.progress(score_conformite / 100)
+        st.write("")
     else:
-        st.info("Veuillez sélectionner ou créer un client dans la barre latérale.")
+        st.error("⚠️ Fichier 'Control List.csv' introuvable.")
+
+    # Affichage de votre fichier "Readiness" de référence
+    st.subheader("🎯 Objectifs et Jalons de Préparation (Readiness)")
+    if df_readiness is not None:
+        st.dataframe(df_readiness, use_container_width=True)
+    else:
+        st.info("Ajoutez le fichier 'Readiness.csv' pour afficher vos indicateurs spécifiques ici.")
 
 # ----------------------------------------------------
-# 2. AUDIT & CONTRÔLES SOC2 (INTERACTIF)
+# 2. REGISTRE DES CONTRÔLES SOC2 (INTERACTIF)
 # ----------------------------------------------------
-elif choice == "📋 Audit & Contrôles SOC2":
-    if client_actif:
-        st.header(f"📋 Audit des contrôles pour : {client_actif}")
-        client_data = load_client_data(client_actif)
+elif choice == "📋 Registre des Contrôles SOC2":
+    st.header("📋 Évaluation Continue des Contrôles SOC2")
+    st.write("Cochez les contrôles actuellement en place au sein de DNK Security. Vos modifications sont sauvegardées en temps réel.")
+
+    if df_controls is not None:
+        # Moteur de recherche rapide
+        search_query = st.text_input("🔍 Rechercher un contrôle par mot-clé ou ID :", "")
         
-        if df_base_controls is not None:
-            # Recherche
-            search_query = st.text_input("🔍 Filtrer les contrôles :", "")
+        df_filtered = df_controls.copy()
+        id_col = df_filtered.columns[0] # Identifiant unique (ex: critère CC1.1)
+        desc_col = df_filtered.columns[1] if len(df_filtered.columns) > 1 else id_col
+        
+        if search_query:
+            mask = df_filtered.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)
+            df_filtered = df_filtered[mask]
             
-            # Copie pour manipulation
-            df_display = df_base_controls.copy()
-            id_col = df_display.columns[0] # Première colonne comme ID unique
-            desc_col = df_display.columns[1] if len(df_display.columns) > 1 else id_col
+        st.write(f"Affichage de **{len(df_filtered)}** contrôles.")
+        
+        # Boucle d'affichage interactif
+        coches = st.session_state.grc_state.get("controles_coches", {})
+        
+        for idx, row in df_filtered.iterrows():
+            ctrl_id = str(row[id_col])
+            ctrl_desc = str(row[desc_col])
             
-            if search_query:
-                mask = df_display.astype(str).apply(lambda x: x.str.contains(search_query, case=False)).any(axis=1)
-                df_display = df_display[mask]
+            # Récupérer l'état sauvegardé ou False par défaut
+            deja_coche = coches.get(ctrl_id, False)
+            
+            with st.container():
+                col_check, col_text = st.columns([1, 15])
                 
-            st.write(f"Veuillez évaluer les contrôles ci-dessous. Vos modifications sont enregistrées pour **{client_actif}**.")
-            
-            # Formulaire pour sauvegarder les changements d'état
-            statuts_actuels = client_data.get("statuts_controles", {})
-            
-            for idx, row in df_display.iterrows():
-                ctrl_id = str(row[id_col])
-                ctrl_desc = str(row[desc_col])
+                # Case à cocher pour ce contrôle
+                nouveau_statut = col_check.checkbox("", value=deja_coche, key=f"ctrl_{ctrl_id}")
+                col_text.markdown(f"**{ctrl_id}** — {ctrl_desc}")
                 
-                # Récupérer l'état déjà enregistré pour ce client (False par défaut)
-                deja_coche = statuts_actuels.get(ctrl_id, False)
+                # Sauvegarde immédiate si l'utilisateur interagit
+                if nouveau_statut != deja_coche:
+                    coches[ctrl_id] = nouveau_statut
+                    st.session_state.grc_state["controles_coches"] = coches
+                    save_grc_state(st.session_state.grc_state)
+                    st.toast(f"💾 Contrôle {ctrl_id} mis à jour !", icon="✅")
                 
-                with st.container():
-                    col_check, col_text = st.columns([1, 12])
-                    
-                    # Case à cocher interactive
-                    nouveau_statut = col_check.checkbox("", value=deja_coche, key=f"check_{client_actif}_{ctrl_id}")
-                    col_text.markdown(f"**{ctrl_id}** — {ctrl_desc}")
-                    
-                    # Si le statut change, on met à jour le dictionnaire du client
-                    if nouveau_statut != deja_coche:
-                        statuts_actuels[ctrl_id] = nouveau_statut
-                        client_data["statuts_controles"] = statuts_actuels
-                        save_client_data(client_actif, client_data)
-                        st.toast(f"Statut mis à jour pour {ctrl_id}", icon="💾")
-                    
-                    st.divider()
-        else:
-            st.error("Fichier 'Control List.csv' manquant.")
+                st.divider()
     else:
-        st.info("Sélectionnez un client dans la barre latérale.")
+        st.error("⚠️ Impossible de charger la liste des contrôles. Vérifiez la présence du fichier 'Control List.csv'.")
 
 # ----------------------------------------------------
-# 3. REGISTRE DES RISQUES CLIENT
+# 3. REGISTRE DES RISQUES
 # ----------------------------------------------------
-elif choice == "🎲 Registre des Risques Client":
-    if client_actif:
-        st.header(f"🎲 Gestion des Risques — {client_actif}")
-        client_data = load_client_data(client_actif)
+elif choice == "🎲 Registre des Risques":
+    st.header("🎲 Registre des Risques de l'Entreprise")
+    st.write("Identifiez, qualifiez et suivez les risques de sécurité pour DNK Security.")
+    
+    # Formulaire d'ajout de risque
+    with st.form("risk_form_internal", clear_on_submit=True):
+        st.subheader("⚠️ Déclarer un nouveau risque")
+        intitule = st.text_input("Description du risque (ex: Fuite de données, Panne serveur...)")
         
-        # Initialiser la liste des risques pour ce client si elle n'existe pas
-        if "risques" not in client_data:
-            client_data["risques"] = []
+        col1, col2 = st.columns(2)
+        with col1:
+            vraisemblance = st.slider("Vraisemblance (1 = Rare, 5 = Presque certain)", 1, 5, 3)
+        with col2:
+            impact = st.slider("Impact (1 = Mineur, 5 = Critique)", 1, 5, 3)
             
-        with st.form("risk_form_client", clear_on_submit=True):
-            st.subheader("Signaler un risque propre à ce client")
-            intitule = st.text_input("Description de l'incident / risque")
-            vraisemblance = st.slider("Vraisemblance (1-5)", 1, 5, 3)
-            impact = st.slider("Impact (1-5)", 1, 5, 3)
-            submit = st.form_submit_button("Enregistrer le risque")
-            
-        if submit and intitule:
-            score = vraisemblance * impact
-            client_data["risques"].append({
-                "Description": intitule,
-                "Score": score,
-                "Sévérité": "Haute" if score >= 15 else "Moyenne" if score >= 8 else "Faible"
-            })
-            save_client_data(client_actif, client_data)
-            st.success("Risque ajouté au registre du client !")
-            
-        # Affichage du registre du client
-        if client_data["risques"]:
-            st.subheader("Risques en cours de suivi")
-            st.dataframe(pd.DataFrame(client_data["risques"]), use_container_width=True)
+        submit = st.form_submit_button("Ajouter au registre")
+        
+    if submit and intitule:
+        score = vraisemblance * impact
+        severite = "Critique" if score >= 15 else "Moyen" if score >= 8 else "Faible"
+        
+        # Ajout à la liste et sauvegarde
+        st.session_state.grc_state["risques"].append({
+            "Description": intitule,
+            "Vraisemblance": vraisemblance,
+            "Impact": impact,
+            "Score": score,
+            "Sévérité": severite
+        })
+        save_grc_state(st.session_state.grc_state)
+        st.success("Risque enregistré avec succès !")
+
+    # Affichage du tableau des risques existants
+    liste_risques = st.session_state.grc_state.get("risques", [])
+    if liste_risques:
+        st.subheader("Risques actuellement sous surveillance")
+        df_risques = pd.DataFrame(liste_risques)
+        
+        # Colorer les lignes selon le score de risque pour une meilleure lisibilité
+        st.dataframe(df_risques, use_container_width=True)
     else:
-        st.info("Sélectionnez un client dans la barre latérale.")
+        st.info("Aucun risque enregistré pour le moment. Utilisez le formulaire ci-dessus.")
