@@ -1,0 +1,46 @@
+﻿✅  SOC2 READINESS — TASK TRACKER,,,,,,,,
+Update the Status column as tasks are completed. ,,,,,,,,
+Task #,Control #,Section,Task Description,Owner,Status,Priority,Due Date,Notes
+1,1,Organizational Controls,Conduct formal board meetings at least once every quarter and maintain written minutes of each meeting.,,To Do,Low,,
+2,2,Organizational Controls,"Hold formal monthly management meetings with documented minutes (Slack thread, Google Doc, or Notion board is acceptable).",,To Do,Low,,
+3,4,Organizational Controls,Create a OnePager describing the system and its boundaries and communicate it to a prospect.,,To Do,Low,,
+4,5,Organizational Controls,Obtain and customize policy templates aligned with your processes; publish them in the internal portal.,,To Do,Medium,,
+5,7,Organizational Controls,"Systematically document reference/background checks for all new hires, including informal network references.",,To Do,High,,
+6,"8, 29",Organizational Controls,"Create an onboarding checklist covering HR tasks and access provisioning (who granted what access, to whom, and when).",,To Do,High,,
+7,"8, 29",Organizational Controls,"Implement an offboarding checklist ensuring access revocation is timely and fully documented (who revoked which access, from whom, and when).",,To Do,High,,
+8,10,Organizational Controls,Implement annual security awareness training for all employees (Presentation + Google Form will be provided).,,To Do,Medium,,
+9,11,Organizational Controls,Provide annual secure coding training for developers (Presentation + Google Form will be provided).,,To Do,Medium,,
+10,12,Organizational Controls,"Publish release notes for clients and create a ""What's New"" page on the platform.",,To Do,Medium,,The communication could be via email
+11,17,Organizational Controls,"Vendor mapping — review the vendor mapping to ensure accuracy: remove irrelevant entries, retain relevant ones, and add any missing vendors.",,To Do,Low,,
+12,20,Monitoring,"Set up monitoring tools for the environment, configure alerts, and ensure ongoing management via alert notifications.",,To Do,Medium,,
+13,22,Logical & Physical Access,Google Workspace — enforce 2FA for all users.,,To Do,Low,,
+14,28,Logical & Physical Access,GitHub — enforce 2FA for all users.,,To Do,Low,,
+15,23,Logical & Physical Access,Restrict production environment permissions based on a Need-to-Know / least-privilege basis and enforce 2FA.,,To Do,Medium,,
+16,35,System Operations,Enable Dependabot (or equivalent) in the source code repository and begin addressing HIGH and CRITICAL findings.,,To Do,Medium,,
+17,36,System Operations,Select and engage a penetration testing vendor for the annual pentest.,,To Do,Medium,,
+18,37,System Operations,Ensure all employees have FileVault enabled on their MacBook (MDM-enforced).,,To Do,Medium,,
+19,32,System Operations,Enable WAF or VPC security groups to protect network perimeter.,,To Do,Medium,,
+20,27,System Operations,Create and maintain a system architecture diagram.,,To Do,Medium,,
+21,40,Change Management,"Enforce a Pull Request process: all commits via PR, mandatory code review, automated tests, and linked ticket (Linear/JIRA). Merges blocked without these.",,To Do,High,,
+22,45,Change Management,"Implement branch protection policies: require code review, status checks; define emergency bypass options if needed.",,To Do,High,,
+23,46,Availability,Create a public status page to communicate uptime and downtime to customers.,,To Do,High,,"• https://betterstack.com/status-page
+• https://cronitor.io/"
+24,48,Availability,"Configure a formal backup policy (frequency, retention, encryption) for all production databases.",,To Do,Low,,
+25,49,Availability,Enable Multi-AZ (multi-availability zone) replication for production databases.,,To Do,Low,,
+26,"19, 50",Availability,Perform a DRP (Disaster Recovery Plan) test on the dev environment.,,To Do,Low,,"Run your simple scenario — the environment should obviously be on the dev environment.
+• Screenshot should be the entire screen (Showing date and time)
+(Screenshot)
+• Show that the platform is working.
+(Screenshot)
+• Delete the database.
+(Screenshot)
+• Show that the platform is no longer working.
+(Screenshot)
+• Start the restoration process.
+(Screenshot)
+• Restore the database and show that the platform is working again and has returned to normal.
+(Screenshot)"
+27,51,Confidentiality,Encrypt customer data at rest (database-level encryption) and verify/screenshot configuration.,,To Do,Low,,
+28,52,Confidentiality,Ensure all customer interactions use SSL/TLS (HTTPS); document and screenshot the SSL configuration.,,To Do,Low,,
+29,53,Confidentiality,Ensure all vendors and partners with access to sensitive information sign NDAs / confidentiality agreements.,,To Do,Low,,
+30,54,Confidentiality,Establish and document a formal data deletion/disposal process and policy.,,To Do,Low,,

@@ -1,0 +1,165 @@
+﻿-,,,,,,,,,,,,,,,,,,,,,,,
+,Control list,AUDIT SOC2 Type 2,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,
+#,Control from the audit,Expected evidence,Owner,Status,Comments,link folder,Section,,,,,,,,,,,,,,,,
+,Organizational controls (Entity Level Controls),,,,,,,,,,,,,,,,,,,,,,
+1,The Board of Directors meets on a quarterly basis. The Board meeting has a fixed agenda to review key operational and strategic aspects of the organization.,"• BoD meeting invite
+• BoD meeting minutes",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+2,The management of the company meets on at least a monthly basis to discuss on-going issues and updates.   ,"• Management meeting invite
+• Management meeting minutes",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+3,An organizational chart is documented and approved by management that clearly defines management authorities and reporting hierarchy.  ,"• [Company_Name] Organizational chart (include only job titles, not individual names)",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+4,A description of the [Company_Name] system and its boundaries is documented and communicated to the relevant [Company_Name] employees and to external users through [Company_Name]'s website.  ,• A screenshot of the [Company_Name] platform/website showing system/product description,,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+5,"Policies and procedures are documented, reviewed and approved on an annual basis by the management team and available to [Company_Name]'s employees within the [Company_Name] internal portal.","• [Company_Name] policies and procedures including an approval section (See tab ""policies"" for the list) 
+• Review of policies
+• A screenshot of the internal portal/drive showing employees have access to the relevant policies and procedures",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+6,"An information security policy is documented, reviewed and approved by [Company_Name] management on an annual basis.","• The [Company_Name] security policy including an approval section
+• Review of the policy",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+7,New employees go through screening and appropriate reference or background checks.,"• Testing:
+1. [Company_Name] will provide the list of new employees who joined during the audit period.
+2. EY will choose a sample of new employees
+3. [Company_Name] will provide evidence of reference checks for the chosen sample",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+8,"New employees go through an onboarding process during which a checklist is used that includes the various steps the employee must complete, such as receiving office equipment.","• A new employee checklist template
+• Testing:
+1. [Company_Name] will provide the list of new employees who joined during the audit period.
+2. EY will choose a sample of new employees
+3. [Company_Name] will provide completed onboarding checklists for the chosen sample",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+9,New employees are required to sign a standard employment agreement outlining the confidentiality and the intellectual property clauses.,"• An employment contract with an NDA/confidentiality section
+• Testing:
+1. [Company_Name] will provide the list of new employees who joined during the audit period.
+2. EY will choose a sample of new employees
+3. [Company_Name] will provide signed employment agreements for the chosen sample",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+10,Employees go through annual security awareness training based on the [Company_Name] security policy. ,"1. Security Awareness training materials
+2. Testing:
+1. The Company will provide a list of current employees 
+2. EY will choose a sample of employees
+3. The Company will provide evidence of security awareness training for the chosen sample",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+11,"Personnel responsible for the design, development, implementation, and operation of systems undergo training on an ad-hoc basis.","1. Presentation of R&D training
+2. Training meeting invitations with all participants",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+12,"New features are communicated to customers, if relevant, through emails through the account manager.","• Testing:
+1. [Company_Name] will provide the list of versions which were released during the audit period (with a screenshot of the query/parameters used to generate the list.)
+2. EY will choose a sample of release notes
+3. [Company_Name] will provide the release notes emails sent to customers
+• A policy describing the process for communicating new features and defining what qualifies as a “significant” change.",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+13,Open positions and their detailed job descriptions are documented and maintained within the Company website. ,"• A screenshot from the [Company_Name] website showing available positions
+• A screenshot from the [Company_Name] website showing an example of a job description.",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+14,Employees go through a feedback process on at least an annual basis. The feedback reports are retained with the employee personal record.,"• Feedback report template
+• Testing:
+1. [Company_Name] will provide a list of current employees
+2. EY will choose a sample of employees
+3. [Company_Name] will provide feedback reports for the chosen sample",,Gap,,,Organizational Controls,,,,,,,,,,,,,,,,
+,Risk Assessment and Mitigation controls,,,,,,,,,,,,,,,,,,,,,,
+15,"A comprehensive risk assessment is performed annually during a meeting to identify and evaluate key areas such as business objectives, operational processes, and security-related factors that could impact the achievement of business objectives. This assessment focuses on significant risks and is documented and maintained within a risk matrix.","• Risk assessment policy
+• Risk assessment documentation and review.
+• Risk meeting invite
+• Risk meeting minutes",,Gap,,,Risk Assessment,,,,,,,,,,,,,,,,
+16,"Risk mitigation activities are performed to respond to, reduce, and recover from security events that could disrupt business operations. Policies and procedures are developed and maintained to support these activities.",• Risk mitigation documentation as part of the risk assessment.,,Gap,,,Risk Assessment,,,,,,,,,,,,,,,,
+17,"[Company_Name] assesses on an annual basis, the risks that vendors and business partners represent to the achievement of the company's objectives.","• Vendor mapping matrix including risks, information contained and existing certifications",,Gap,,,Risk Assessment,,,,,,,,,,,,,,,,
+18,[Company_Name] has implemented a vendor management policy which details the vendor termination process. The policy is reviewed and approved annually.,"• The [Company_Name] vendor management policy
+• Evidence showing the policy is reviewed.
+",,Gap,,,Risk Assessment,,,,,,,,,,,,,,,,
+19,[Company_Name] has developed a Disaster Recovery Plan in order to continue to provide critical services in the event of a disaster. The DR is tested on an annual basis,"• DRP document
+• DRP policy
+• DR test",,Gap,,,Risk Assessment,,,,,,,,,,,,,,,,
+,Monitoring controls,,,,,,,,,,,,,,,,,,,,,,
+20,"Actions performed on the production environment, including OS, DB and application are monitored, logged and reviewed. Alerts are triggered upon the identification of an anomaly.","• Monitoring logs
+• Alert configuration
+• Example of an alert
+• Audit logs of changes and access to the production environment",,Gap,,,Monitoring,,,,,,,,,,,,,,,,
+21,"The Company uses a suite of monitoring tools in order to monitor its service. The production environment, including the servers and application, is monitored by the Operation Team. Key The Company personnel are notified of events.","• Screenshots of monitoring tools:
+1. Dashboard
+2. Alerts Configuration
+",,Gap,,,Monitoring,,,,,,,,,,,,,,,,
+,Logical and Physical Access controls,,,,,,,,,,,,,,,,,,,,,,
+22,"Users are identified through the use of a user ID/password combination using an SSO tool. Passwords are configured to meet strong security requirements, including complexity and periodic updates.","• The password policy of the SSO tool showing configuration
+• Applications connected to the SSO tool.
+• The password policy for all tools not connected to the SSO - for the cloud provider and the source tool.",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+23,The access to the production environment is performed using a two-factor authentication and is restricted to authorized personnel.,"•  List of users with access to production
+• Screenshot showing that all users have 2FA enforced.",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+24,The access to the deployment tool requires MFA and is restricted to authorized personnel.  ,"• Configuration showing MFA is enforced
+• List of users with access to the deployment tool.",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+25,"Terminated employees have their access to the company’s systems (including production-related environments) have their permissions removed and the Company equipment returned in a timely manner, as documented in the offboarding checklists.","• Termination checklist
+• Testing:
+1. [Company_Name] will provide a list of employees terminated during the audit period
+2. EY will choose a sample
+3. [Company_Name] will provide completed offboarding checklists for the terminated employee",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+26,Specific developers can have access for specific projects to the production environment. These accesses and changes are logged and reviewed on a quarterly basis.,"• List of users with access to production
+• Permission groups
+• Dashboard of login logs for production
+• Evidence of periodic manual review of access and change logs, and summaries of actions taken.",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+27,The Company has defined an architecture diagram that illustrates the security and protection measures for system resources.,• An architecture diagram,,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+28,Access to the source control tool is performed using MFA and is restricted to authorized personnel.,"• Configuration showing MFA is enforced
+• List of users with access to the source control application",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+29,"New employees are granted access to the different environments by a ticketing system process and subject to manager approval.
+
+New employees are granted access to the different environments upon job requirements \by a ticketing system process \ an email-based request process \ assigning the employee to the relevant user groups within the SSO tool.","• Onboarding checklist
+• Testing:
+1. [Company_Name] will provide a list of new employees granted access to production environments during the audit period.
+2. EY will choose a sample
+3. The Company will provide evidence of the approval granting process for the chosen sample - including how access was granted, the list of permissions provided to the employee, who approved the access, and the date the approval was given.",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+30,"Permissions to the different production-related environments are reviewed, approved and documented by the Company management on an annual basis.","• Documentation of the user access review (See tab ""user access review"" for guidelines)",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+31,"Physical access to the offices is restricted to authorized personnel using a personal identification card according to the physical access policy. Also, visitors to the [Company_Name] office are accompanied while on premises. ",• The [Company_Name] physical access policy.,,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+32,Strict firewall\security groups rules are configured to protect network access and allow access to approved services. ,"• Logs of firewall changes
+• Screenshot of the different firewall rules to see that traffic is restricted",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+33,[Company_Name] performs a review of the SOC 2 report of its subservice organization on an annual basis. Deviations are investigated. The review includes identifying and documenting the controls in place at [Company_Name] to address the CUECs.,• SOC2 report review documentation of the data centers,,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+34,"The Company has a formal policy for access control functions, the policy is documented and available to all The Company employees and outlines the following procedures:  
+- Adding new users
+- Modifying an existing user's access
+- Removing an existing user's access
+- Restricting access based on separation of duties and least privilege
+The procedures are reviewed by management at least annually.","• Policy that details the formal procedures for adding, modifying, and removing user access, as well as guidelines for enforcing separation of duties and the principle of least privilege.",,Gap,,,Logical & Physical Access,,,,,,,,,,,,,,,,
+,System Operations controls,,,,,,,,,,,,,,,,,,,,,,
+35,Vulnerability scans are performed on all the code using a dedicated tool in order to identify issues within the application.,"• Vulnerability scanning configuration
+• Evidence showing that high and critical issues are tracked and resolved",,Gap,,,System Operations,,,,,,,,,,,,,,,,
+36,An external penetration test is performed on an annual basis. Critical and high issues are investigated and resolved.,"• Results of the annual penetration test showing critical/high issues
+• An example of a ticket opened for a critical/high issue tracked to resolution",,Gap,,,System Operations,,,,,,,,,,,,,,,,
+37,Antivirus software is installed on workstations and laptops supporting such software. [Company_Name] uses a centralized management tool.,"• Evidence from the unified endpoint management tool showing that all computers are protected.
+• Evidence showing that servers are protected.",,Gap,,,System Operations,,,,,,,,,,,,,,,,
+38,[Company_Name] has an security incident response management policy. Incidents trigger tickets and are tracked to resolution. Root cause analysis is performed following security incidents. ,"• The [Company_Name] Incident Management Policy
+• RCA template (within Security Incident Response Policy)
+• In case an incident occurred, evidence showing that RCA was performed 
+• If no security incidents occurred during the audit period, please provide an email statement confirming that no incidents took place for at least 75% of the audit period.",,Gap,,,System Operations,,,,,,,,,,,,,,,,
+,Change Management controls,,,,,,,,,,,,,,,,,,,,,,
+39,There is a documented change management policy. The policy is reviewed and approved on an annual basis.,"• The [Company_Name] change management policy
+• Evidence showing that the policy was reviewed",,Gap,,,Change Management,,,,,,,,,,,,,,,,
+40,"Design, acquisition, implementation, configuration, modification, and management of infrastructure and software are documented and approved within the change management application. Infrastructure Changes follow the same process as the code changes.","• Testing:
+1. [Company_Name] will provide a list of tickets closed during the audit period (with a screenshot of the query/parameters used to generate the list.)
+2. EY will choose a sample
+3. [Company_Name] will provide screenshots of tickets showing prioritization for the chosen sample
+• Infrastructure change example",,Gap,,,Change Management,,,,,,,,,,,,,,,,
+41,Tickets in the change management tool are connected to the source control tool in order to link the request to the code change. ,"• Testing (from the sample in control 40):
+1. [Company_Name] will provide screenshots of the change tickets for the chosen sample",,Gap,,,Change Management,,,,,,,,,,,,,,,,
+42,Code changes are reviewed along with the pull request performed by the team leader. The code review is documented on the source control tool. Code review is mandatory in order to continue in the SDLC process and deploy a version to the production environment.,"• Code review configuration in source control tool
+• Testing (from the sample in control 40):
+1. [Company_Name] will provide screenshots of the source control tickets showing code review",,Gap,,,Change Management,,,,,,,,,,,,,,,,
+43,"Access to modify branch configuration within the source code management tool is restricted to authorized personnel, ensuring proper segregation of duties.",• List of users with permission to modify the branch configuration in the source code management tool,,Gap,,,Change Management,,,,,,,,,,,,,,,,
+44,Automation tests are performed using a dedicated tool on a regular basis in order to identify issues within the application.  ,"• Automation test configuration 
+• Testing (from the sample in control 40):
+1. [Company_Name] will provide screenshots of tickets showing testing",,Gap,,,Change Management,,,,,,,,,,,,,,,,
+45,A successful test status is required to continue in the SDLC process.,• The configuration showing successful test status is required,,Gap,,,Change Management,,,,,,,,,,,,,,,,
+,Availability,,,,,,,,,,,,,,,,,,,,,,
+46,"The Company monitors its system uptime to ensure the availability and reliability of its services. Service interruptions and maintenance notifications are sent to customers.
+
+Or 
+
+The Company maintains a public status page that provides real-time information regarding system availability, performance, and service incidents.","• The platform uptime report showing that service interruptions are monitored.
+• Sample of client communication of any downtime that might've occurred during the audit period. 
+
+Or 
+
+• Screenshots from the Company’s uptime status page covering the entire audit period.
+
+Note: Screenshots taken must cover at least 75% of the audit period.",,Gap,,,Availability,,,,,,,,,,,,,,,,
+47,Uptime requirements are defined in the SLA agreement. ,• The SLA template showing it includes uptime requirements,,Gap,,,Availability,,,,,,,,,,,,,,,,
+48,[Company_Name] database is backed up according to the backup policy. The logs are backed up on a daily basis.,• The backup configuration,,Gap,,,Availability,,,,,,,,,,,,,,,,
+49,[Company_Name] databases are replicated in several availability zones.,"• Screenshot of availability zones
+",,Gap,,,Availability,,,,,,,,,,,,,,,,
+50,A restore process is performed and documented on an annual basis.,• Documentation of the restoration process,,Gap,,,Availability,,,,,,,,,,,,,,,,
+,Confidentiality controls,,,,,,,,,,,,,,,,,,,,,,
+51,Customer passwords are encrypted within the database.,"• Screenshot of database encryption
+",,Gap,,,Confidentiality,,,,,,,,,,,,,,,,
+52,Interactions between customers and the [Company_Name] platform are performed by using an encrypted channel based on an authenticated SSL connection. ,• SSL configuration,,Gap,,,Confidentiality,,,,,,,,,,,,,,,,
+53,Business partners are required to sign an agreement containing a confidentiality clause.,• A sample of signed confidentiality agreements with new business partners ,,Gap,,,Confidentiality,,,,,,,,,,,,,,,,
+54,"The Company has implemented a Data Disposal Policy, which details the procedures for disposing of customer confidential information upon request at the end of a contract agreement. The policy is reviewed and approved annually.",• The data disposal policy and procedure,,Gap,,,Confidentiality,,,,,,,,,,,,,,,,
