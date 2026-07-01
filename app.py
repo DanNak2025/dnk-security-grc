@@ -3,207 +3,188 @@ import pandas as pd
 import json
 import os
 
-# Configuration de la page
-st.set_page_config(page_title="GRC Expert Console", layout="wide", initial_sidebar_state="expanded")
+# Configuration de la page avec un style épuré
+st.set_page_config(page_title="ClearGRC Dashboard", layout="wide", initial_sidebar_state="collapsed")
 
-st.title("💼 GRC Expert — Console de Consulting")
-st.caption("Pilotez la conformité SOC2, ISO27001, les Risques et les Politiques de vos clients.")
+# --- STYLE CSS POUR REPRODUIRE L'INTERFACE CLEARGRC ---
+st.markdown("""
+<style>
+    /* Fond de page et polices */
+    .reportview-container, .main { background-color: #fafbfc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    /* En-tête de l'application */
+    .header-container { background-color: #ffffff; padding: 20px; border-bottom: 1px solid #e1e4e8; margin-bottom: 25px; }
+    .header-title { font-size: 24px; font-weight: 600; color: #1e293b; }
+    
+    /* Cartes d'indicateurs (Metrics) */
+    .metric-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .metric-label { font-size: 13px; font-weight: 500; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+    .metric-value { font-size: 28px; font-weight: 700; color: #0f172a; }
+</style>
+""", unsafe_with_stdio=True)
+
+# --- HEADER CLEARGRC ---
+st.markdown('<div class="header-container"><div class="header-title">🛡️ ClearGRC — Plateforme de Gouvernance & Conformité</div></div>', unsafe_with_stdio=True)
 
 # --- INITIALISATION DE LA BASE DE DONNÉES EN MÉMOIRE ---
 if "clients_db" not in st.session_state:
     st.session_state.clients_db = {}
 
-# --- ACCÈS AUX FICHIERS (MATRICES) ---
-st.sidebar.header("⚙️ Configuration des Matrices")
-with st.sidebar.expander("📁 Charger vos matrices Excel (CSV)", expanded=False):
-    uploaded_controls = st.file_uploader("Fichier 'Control List' (CSV)", type=["csv"], key="uploader_ctrl")
-    uploaded_readiness = st.file_uploader("Fichier 'Readiness' (CSV)", type=["csv"], key="uploader_ready")
+# --- BARRE LATÉRALE (DISCRÈTE, UNIQUEMENT POUR CHOISIR LE CLIENT ET LES MATRICES) ---
+with st.sidebar:
+    st.header("⚙️ Paramètres Consultant")
+    new_client = st.text_input("Créer un compte client :", placeholder="Nom de l'entreprise...")
+    if st.button("➕ Initialiser", use_container_width=True):
+        if new_client and new_client not in st.session_state.clients_db:
+            st.session_state.clients_db[new_client] = {
+                "statut_controles": {}, "statut_readiness": {}, "risques": [], "vendors": [],
+                "policies": {
+                    "Politique de Sécurité (PSSI)": "À rédiger",
+                    "Contrôle d'Accès": "À rédiger",
+                    "Gestion des Incidents": "À rédiger",
+                    "Sécurité des Tiers": "À rédiger"
+                }
+            }
+    
+    liste_clients = list(st.session_state.clients_db.keys())
+    client_actif = st.selectbox("🎯 Client en cours d'audit :", liste_clients if liste_clients else ["Exemple_Client"])
+    
+    # Si le client de démo est actif, on l'initialise en mémoire pour éviter les bugs
+    if client_actif not in st.session_state.clients_db:
+        st.session_state.clients_db[client_actif] = {"statut_controles": {}, "statut_readiness": {}, "risques": [], "vendors": [], "policies": {}}
+    
+    db = st.session_state.clients_db[client_actif]
+    
+    st.markdown("---")
+    st.markdown("**📁 Chargement des Matrices Excel (CSV)**")
+    uploaded_controls = st.file_uploader("Contrôles SOC2 / ISO", type=["csv"])
+    uploaded_readiness = st.file_uploader("Plan de route Readiness", type=["csv"])
 
-# Lecture robuste des fichiers CSV
-def load_uploaded_csv(uploaded_file):
-    if uploaded_file is not None:
-        try:
-            return pd.read_csv(uploaded_file, sep=None, engine='python')
-        except Exception:
-            return None
+# Lecture des fichiers
+def read_csv(file):
+    if file is not None:
+        try: return pd.read_csv(file, sep=None, engine='python')
+        except Exception: return None
     return None
 
-df_controls_base = load_uploaded_csv(uploaded_controls)
-df_readiness_base = load_uploaded_csv(uploaded_readiness)
+df_controls = read_csv(uploaded_controls)
+df_readiness = read_csv(uploaded_readiness)
 
-# --- GESTION DES CLIENTS ---
-st.sidebar.markdown("---")
-st.sidebar.header("🏢 Portefeuille Clients")
-
-# Création de client
-new_client = st.sidebar.text_input("Ajouter une entreprise client :", placeholder="Nom du client...")
-if st.sidebar.button("➕ Initialiser le client", use_container_width=True):
-    if new_client and new_client not in st.session_state.clients_db:
-        st.session_state.clients_db[new_client] = {
-            "statut_controles": {},
-            "statut_readiness": {},
-            "risques": [],
-            "vendors": [],
-            "policies": {
-                "Politique de Sécurité (PSSI)": "À rédiger",
-                "Contrôle d'Accès": "À rédiger",
-                "Gestion des Incidents": "À rédiger",
-                "Gestion des Tiers / Fournisseurs": "À rédiger"
-            }
-        }
-        st.sidebar.success(f"Client {new_client} créé !")
-
-# Sélection du client actif
-liste_clients = list(st.session_state.clients_db.keys())
-if liste_clients:
-    client_actif = st.sidebar.selectbox("🎯 Client sélectionné :", liste_clients)
-    db = st.session_state.clients_db[client_actif]
-else:
-    client_actif = None
-    st.sidebar.warning("Créez un client dans la barre latérale.")
-
-# Navigation principale
-st.sidebar.markdown("---")
-menu = ["📊 Dashboard Exécutif", "📋 Audit SOC2", "🎯 Feuille de Route (Readiness)", "🎲 Risques & Fournisseurs", "📜 Politiques Documentaires"]
-choice = st.sidebar.radio("Navigation Mission :", menu, disabled=(client_actif is None))
-
-# Bouton de sauvegarde / rafraîchissement global pour éviter les bugs de rechargement automatique
-if client_actif:
-    st.sidebar.markdown("---")
-    if st.sidebar.button("💾 Sauvegarder les modifications", use_container_width=True):
-        st.sidebar.success("Données synchronisées avec succès !")
+# --- NAVIGATION SUPÉRIEURE PAR ONGLETS (STYLE DU SITE CLEARGRC) ---
+tab_dash, tab_risk, tab_vendor, tab_policies, tab_certs = st.tabs([
+    "📊 Dashboard", 
+    "🎲 Risk Assessment", 
+    "🏢 Vendor Assessment", 
+    "📜 Policies", 
+    "📜 Certifications (ISO27001/SOC2)"
+])
 
 # ----------------------------------------------------
-# 1. TABLEAU DE BORD
+# ONGLET 1 : DASHBOARD
 # ----------------------------------------------------
-if choice == "📊 Dashboard Exécutif" and client_actif:
-    st.header(f"📊 Diagnostic de Sécurité — {client_actif}")
+with tab_dash:
+    st.subheader(f"Vue d'ensemble de la posture — {client_actif}")
     
-    total_ctrls = len(df_controls_base) if df_controls_base is not None else 54
-    saved_ctrls = db.get("statut_controles", {})
-    ready_or_approved = sum(1 for v in saved_ctrls.values() if v in ["Ready for Audit", "Approved by Auditor"])
-    pct_soc2 = int((ready_or_approved / total_ctrls) * 100) if total_ctrls > 0 else 0
-    
-    total_tasks = len(df_readiness_base) if df_readiness_base is not None else 30
-    saved_tasks = db.get("statut_readiness", {})
-    done_tasks = sum(1 for v in saved_tasks.values() if v == "Done")
-    pct_readiness = int((done_tasks / total_tasks) * 100) if total_tasks > 0 else 0
+    # Calculs rapides pour les métriques
+    total_ctrls = len(df_controls) if df_controls is not None else 54
+    ready_count = sum(1 for v in db["statut_controles"].values() if v in ["Ready for Audit", "Approved"])
+    score_compliance = int((ready_count / total_ctrls) * 100) if total_ctrls > 0 else 0
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Maturité SOC2 (Audit)", f"{pct_soc2}%", f"{ready_or_approved}/{total_ctrls} validés")
-    c2.metric("Chantiers Techniques (Readiness)", f"{pct_readiness}%", f"{done_tasks}/{total_tasks} terminés")
-    c3.metric("Menaces & Tiers", f"{len(db['risques'])} Risques", f"{len(db['vendors'])} Fournisseurs")
-    
-    st.markdown("---")
-    st.subheader("📈 Progression vers la conformité")
-    st.write("Plan de remédiation technique (Tâches Readiness)")
-    st.progress(pct_readiness / 100)
-    st.write("Validation réglementaire des contrôles (SOC2 Controls)")
-    st.progress(pct_soc2 / 100)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(f'<div class="metric-card"><div class="metric-label">Conformité Globale</div><div class="metric-value">{score_compliance}%</div></div>', unsafe_with_stdio=True)
+    with c2:
+        st.markdown(f'<div class="metric-card"><div class="metric-label">Risques Critiques</div><div class="metric-value">{len(db["risques"])}</div></div>', unsafe_with_stdio=True)
+    with c3:
+        st.markdown(f'<div class="metric-card"><div class="metric-label">Tiers Évalués</div><div class="metric-value">{len(db["vendors"])}</div></div>', unsafe_with_stdio=True)
+    with c4:
+        st.markdown(f'<div class="metric-card"><div class="metric-label">Politiques Validées</div><div class="metric-value">{sum(1 for v in db["policies"].values() if v == "Approuvée")}/{len(db["policies"])}</div></div>', unsafe_with_stdio=True)
 
-# ----------------------------------------------------
-# 2. AUDIT SOC2
-# ----------------------------------------------------
-elif choice == "📋 Audit SOC2" and client_actif:
-    st.header(f"📋 Grille d'Audit SOC2 — {client_actif}")
-    
-    if df_controls_base is not None:
-        search = st.text_input("🔍 Rechercher un critère, un mot-clé...")
-        df = df_controls_base.copy()
-        
-        if search:
-            df = df[df.astype(str).apply(lambda x: x.str.contains(search, case=False)).any(axis=1)]
-            
-        for idx, row in df.iterrows():
-            c_id = str(row.iloc[0])
-            c_desc = str(row.iloc[1])
-            c_evidence = str(row.iloc[2]) if len(row) > 2 and pd.notna(row.iloc[2]) else "Aucune preuve requise listée"
-            
-            current_st = db["statut_controles"].get(c_id, "Gap")
-            
-            with st.expander(f"🔹 {c_id} — {c_desc[:90]}..."):
-                st.write(f"**Description :** {c_desc}")
-                st.info(f"**Preuve attendue :** {c_evidence}")
-                
-                opts = ["Gap", "Ready for Audit", "Approved by Auditor"]
-                new_st = st.selectbox("Statut du contrôle :", opts, index=opts.index(current_st), key=f"soc2_{c_id}")
-                if new_st != current_st:
-                    db["statut_controles"][c_id] = new_st
+    st.markdown("### 📈 Jalons de Remédiation")
+    if df_readiness is not None:
+        st.dataframe(df_readiness, use_container_width=True)
     else:
-        st.info("💡 Ouvrez le volet de gauche et déposez votre fichier 'Control List' (CSV) pour charger vos contrôles.")
+        st.info("ℹ️ Chargez votre fichier 'Readiness.csv' dans le menu de gauche pour afficher les jalons techniques ici.")
 
 # ----------------------------------------------------
-# 3. READINESS
+# ONGLET 2 : RISK ASSESSMENT
 # ----------------------------------------------------
-elif choice == "🎯 Feuille de Route (Readiness)" and client_actif:
-    st.header(f"🎯 Plan d'Action Opérationnel — {client_actif}")
+with tab_risk:
+    st.subheader("🎲 Matrice d'Analyse des Risques")
     
-    if df_readiness_base is not None:
-        df = df_readiness_base.copy()
-        for idx, row in df.iterrows():
-            t_id = str(row.iloc[0]) if pd.notna(row.iloc[0]) else f"T-{idx}"
-            t_desc = str(row.iloc[1]) if len(row) > 1 else "Pas de description"
-            
-            current_t_st = db["statut_readiness"].get(t_id, "To Do")
-            
-            with st.container():
-                col_st, col_tx = st.columns([3, 7])
-                opts_t = ["To Do", "In Progress", "Done"]
-                new_t_st = col_st.selectbox(f"Statut {t_id}", opts_t, index=opts_t.index(current_t_st), key=f"ready_{t_id}")
-                
-                col_tx.markdown(f"**{t_id}** — {t_desc}")
-                
-                if new_t_st != current_t_st:
-                    db["statut_readiness"][t_id] = new_t_st
-                st.divider()
-    else:
-        st.info("💡 Glissez-déposez votre fichier 'Readiness' (CSV) dans le volet de gauche pour charger vos tâches.")
+    with st.form("risk_premium_form", clear_on_submit=True):
+        col_r1, col_r2, col_r3 = st.columns([6, 3, 3])
+        r_title = col_r1.text_input("Identification de la menace / vulnérabilité")
+        vrais = col_r2.selectbox("Vraisemblance", [1, 2, 3, 4, 5])
+        imp = col_r3.selectbox("Impact", [1, 2, 3, 4, 5])
+        if st.form_submit_button("⚡ Ajouter au registre des risques"):
+            if r_title:
+                db["risques"].append({"Risque / Scénario": r_title, "Criticité": vrais * imp, "Statut": "À traiter"})
+                st.rerun()
 
-# ----------------------------------------------------
-# 4. RISQUES & FOURNISSEURS
-# ----------------------------------------------------
-elif choice == "🎲 Risques & Fournisseurs" and client_actif:
-    st.header(f"🎲 Matrice des Risques et Gestion des Tiers — {client_actif}")
-    
-    # Formulaire Risques
-    st.subheader("🎲 Enregistrer un risque")
-    r_desc = st.text_input("Menace / Risque identifié")
-    vraisemblance = st.slider("Vraisemblance (1-5)", 1, 5, 2)
-    impact = st.slider("Impact (1-5)", 1, 5, 2)
-    if st.button("Ajouter le risque"):
-        if r_desc:
-            db["risques"].append({"Risque": r_desc, "Score": vraisemblance * impact})
-            st.success("Risque ajouté ! Cliquez sur le bouton de sauvegarde à gauche pour actualiser.")
-            
-    if db["risques"]: 
+    if db["risques"]:
         st.dataframe(pd.DataFrame(db["risques"]), use_container_width=True)
-        
-    st.markdown("---")
+    else:
+        st.caption("Aucun risque enregistré pour le moment.")
+
+# ----------------------------------------------------
+# ONGLET 3 : VENDOR ASSESSMENT
+# ----------------------------------------------------
+with tab_vendor:
+    st.subheader("🏢 Évaluation de la chaîne de sous-traitance (Third-Party Risk)")
     
-    # Formulaire Fournisseurs
-    st.subheader("🏢 Enregistrer un sous-traitant")
-    v_name = st.text_input("Nom du sous-traitant")
-    crit = st.selectbox("Criticité", ["Haute", "Moyenne", "Faible"])
-    if st.button("Enregistrer le fournisseur"):
-        if v_name:
-            db["vendors"].append({"Nom": v_name, "Criticité": crit})
-            st.success("Fournisseur ajouté ! Cliquez sur le bouton de sauvegarde à gauche pour actualiser.")
-            
-    if db["vendors"]: 
+    with st.form("vendor_premium_form", clear_on_submit=True):
+        v_name = st.text_input("Nom du fournisseur tiers (ex: AWS, Google Cloud, Salesforce...)")
+        v_crit = st.selectbox("Niveau de criticité pour l'entreprise", ["Critique", "Élevé", "Moyen", "Faible"])
+        if st.form_submit_button("➕ Ajouter le fournisseur"):
+            if v_name:
+                db["vendors"].append({"Sous-traitant": v_name, "Criticité": v_crit, "Rapport SOC2/ISO": "En attente"})
+                st.rerun()
+
+    if db["vendors"]:
         st.dataframe(pd.DataFrame(db["vendors"]), use_container_width=True)
 
 # ----------------------------------------------------
-# 5. POLITIQUES DOCUMENTAIRES
+# ONGLET 4 : POLICIES
 # ----------------------------------------------------
-elif choice == "📜 Politiques Documentaires" and client_actif:
-    st.header(f"📜 Suivi des Politiques Obligatoires (ISO/SOC2) — {client_actif}")
+with tab_policies:
+    st.subheader("📜 Documentation de Gouvernance & Politiques")
     
-    for policy, status in db["policies"].items():
-        with st.container():
-            c_name, c_select = st.columns([6, 4])
-            c_name.markdown(f"📄 **{policy}**")
-            p_opts = ["À rédiger", "En cours de rédaction", "Approuvée & Diffusée"]
-            new_p_st = c_select.selectbox("Statut", p_opts, index=p_opts.index(status), key=f"pol_{policy}")
-            if new_p_st != status:
-                db["policies"][policy] = new_p_st
-            st.divider()
+    for p, status in list(db["policies"].items()):
+        c_p1, c_p2 = st.columns([7, 3])
+        c_p1.markdown(f"📄 **{p}**")
+        opts_p = ["À rédiger", "En cours de revue", "Approuvée"]
+        new_status = c_select = c_p2.selectbox("Statut du document", opts_p, index=opts_p.index(status) if status in opts_p else 0, key=f"p_{p}")
+        if new_status != status:
+            db["policies"][p] = new_status
+        st.divider()
+
+# ----------------------------------------------------
+# ONGLET 5 : CERTIFICATIONS (ISO27001/SOC2)
+# ----------------------------------------------------
+with tab_certs:
+    st.subheader("📜 Suivi d'Audit Réglementaire")
+    
+    if df_controls is not None:
+        search = st.text_input("🔍 Filtrer la liste des contrôles d'audit...")
+        df_f = df_controls.copy()
+        if search:
+            df_f = df_f[df_f.astype(str).apply(lambda x: x.str.contains(search, case=False)).any(axis=1)]
+            
+        for idx, row in df_f.iterrows():
+            c_id = str(row.iloc[0])
+            c_desc = str(row.iloc[1])
+            
+            current_st = db["statut_controles"].get(c_id, "Gap")
+            
+            with st.container():
+                col_c1, col_c2 = st.columns([8, 2])
+                col_c1.markdown(f"**{c_id}** — {c_desc}")
+                
+                opts_c = ["Gap", "Ready for Audit", "Approved"]
+                new_c_st = col_c2.selectbox("Maturité", opts_c, index=opts_c.index(current_st), key=f"c_{c_id}")
+                if new_c_st != current_st:
+                    db["statut_controles"][c_id] = new_c_st
+                st.divider()
+    else:
+        st.info("ℹ️ Pour charger vos 54 contrôles d'audit d'évaluation, déposez votre fichier 'Control List.csv' dans le menu latéral gauche.")
