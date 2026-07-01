@@ -1,252 +1,216 @@
 import streamlit as st
 import pandas as pd
-import os
 import json
+import os
 
-# Configuration de la plateforme de consulting
-st.set_page_config(page_title="Cabinet GRC - Console Consultant", layout="wide")
-st.title("💼 Console Consultant — Plateforme GRC Multi-Clients")
+# Configuration de la page avec un style sombre/pro
+st.set_page_config(page_title="GRC Expert Console", layout="wide", initial_sidebar_state="expanded")
 
-# --- MULTI-TENANCY : PERSISTANCE PAR CLIENT ---
-DATA_DIR = "clients_grc_data"
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
+# --- CSS Personnalisé pour un look d'application SaaS moderne ---
+st.markdown("""
+<style>
+    .reportview-container { background: #f5f7f9; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .status-gap { background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    .status-ready { background-color: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    .status-approved { background-color: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+</style>
+""", unsafe_with_stdio=True)
 
-def get_default_blank_state(client_name):
-    return {
-        "client_name": client_name,
-        "statut_controles": {},  # ID: Statut
-        "statut_readiness": {},  # ID: Statut
-        "risques": [],
-        "vendors": [],
-        "policies": {
-            "Politique de Sécurité de l'Information (PSSI)": "À rédiger",
-            "Politique de Contrôle d'Accès": "À rédiger",
-            "Politique de Gestion des Incidents": "À rédiger",
-            "Politique de Sécurité des Ressources Humaines": "À rédiger",
-            "Politique de Gestion des Fournisseurs": "À rédiger"
-        }
-    }
+st.title("💼 GRC Expert — Console de Consulting")
+st.caption("Pilotez la conformité SOC2, ISO27001, les Risques et les Politiques de vos clients depuis une interface unique.")
 
-def load_client_file(client_name):
-    path = os.path.join(DATA_DIR, f"{client_name}.json")
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return get_default_blank_state(client_name)
+# --- INITIALISATION DE LA BASE DE DONNÉES EN MÉMOIRE ---
+if "clients_db" not in st.session_state:
+    st.session_state.clients_db = {}
 
-def save_client_file(client_name, data):
-    path = os.path.join(DATA_DIR, f"{client_name}.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+# --- ACCÈS AUX FICHIERS (MODÈLES ENTRÉS PAR LE CONSULTANT) ---
+st.sidebar.header("⚙️ Configuration des Matrices")
+with st.sidebar.expander("📁 Charger / Mettre à jour vos matrices Excel (CSV)", expanded=False):
+    uploaded_controls = st.file_uploader("Fichier 'Control List' (CSV)", type=["csv"], key="uploader_ctrl")
+    uploaded_readiness = st.file_uploader("Fichier 'Readiness' (CSV)", type=["csv"], key="uploader_ready")
 
-# --- CHARGEMENT DES RÉFÉRENTIELS (VOS MATRICES EXCEL) ---
-@st.cache_data
-def load_csv_template(filename):
-    if os.path.exists(filename):
-        return pd.read_csv(filename)
+# Chargement intelligent des templates (avec tolérance sur les séparateurs ; ou ,)
+def load_uploaded_csv(uploaded_file):
+    if uploaded_file is not None:
+        try:
+            # Essai de lecture standard
+            return pd.read_csv(uploaded_file, sep=None, engine='python')
+        except Exception:
+            return None
     return None
 
-df_controls_base = load_csv_template("1 - SOC2_ControlList - DNK Security.xlsx - Control List.csv")
-df_readiness_base = load_csv_template("1 - SOC2_ControlList - DNK Security.xlsx - Readiness.csv")
+df_controls_base = load_uploaded_csv(uploaded_controls)
+df_readiness_base = load_uploaded_csv(uploaded_readiness)
 
-# --- SIDEBAR : ESPACE CONSULTANT ---
-st.sidebar.subheader("🏢 Espace Consultant")
-existing_clients = [f.replace(".json", "") for f in os.listdir(DATA_DIR) if f.endswith(".json")]
+# --- GESTION DES CLIENTS ---
+st.sidebar.markdown("---")
+st.sidebar.header("🏢 Portefeuille Clients")
 
-# Formulaire d'ajout de client
-with st.sidebar.expander("➕ Ajouter un nouveau client"):
-    new_client_name = st.text_input("Nom de l'entreprise :", key="new_client_input")
-    if st.button("Créer l'espace client"):
-        if new_client_name and new_client_name not in existing_clients:
-            blank_state = get_default_blank_state(new_client_name)
-            save_client_file(new_client_name, blank_state)
-            st.success(f"Espace {new_client_name} créé !")
-            st.rerun()
+# Création de client
+new_client = st.sidebar.text_input("Ajouter une entreprise client :", placeholder="Nom du client...")
+if st.sidebar.button("➕ Initialiser le client", use_container_width=True):
+    if new_client and new_client not in st.session_state.clients_db:
+        st.session_state.clients_db[new_client] = {
+            "statut_controles": {},
+            "statut_readiness": {},
+            "risques": [],
+            "vendors": [],
+            "policies": {
+                "Politique de Sécurité (PSSI)": "À rédiger",
+                "Contrôle d'Accès": "À rédiger",
+                "Gestion des Incidents": "À rédiger",
+                "Gestion des Tiers / Fournisseurs": "À rédiger"
+            }
+        }
+        st.toast(f"Espace client créé pour {new_client} !", icon="🏢")
 
-# Sélection du client sur lequel vous travaillez
-if existing_clients:
-    client_actif = st.sidebar.selectbox("🎯 Client en cours d'accompagnement :", existing_clients)
-    db = load_client_file(client_actif)
+# Sélection du client actif
+liste_clients = list(st.session_state.clients_db.keys())
+if liste_clients:
+    client_actif = st.sidebar.selectbox("🎯 Client sélectionné :", liste_clients)
+    db = st.session_state.clients_db[client_actif]
 else:
     client_actif = None
-    st.sidebar.warning("Veuillez créer un premier client pour commencer.")
+    st.sidebar.warning("Veuillez créer un premier client pour débloquer la plateforme.")
 
-# Menu des modules de la mission
+# Navigation principale
 st.sidebar.markdown("---")
-st.sidebar.subheader("📋 Modules de la Mission")
-menu = [
-    "📊 Tableau de Bord Client",
-    "📋 Contrôles SOC2 (Audit)",
-    "🎯 Préparation (Readiness)",
-    "🎲 Gestion des Risques & Tiers",
-    "📜 Politiques & ISO27001"
-]
-choice = st.sidebar.radio("Naviguer vers :", menu, disabled=(client_actif is None))
+menu = ["📊 Dashboard Exécutif", "📋 Audit SOC2", "🎯 Feuille de Route (Readiness)", "🎲 Risques & Fournisseurs", "📜 Politiques Documentaires"]
+choice = st.sidebar.radio("Navigation Mission :", menu, disabled=(client_actif is None))
 
 # ----------------------------------------------------
-# 1. TABLEAU DE BORD CLIENT
+# 1. TABLEAU DE BORD
 # ----------------------------------------------------
-if choice == "📊 Tableau de Bord Client" and client_actif:
-    st.header(f"📊 Tableau de Bord Diagnostic — {client_actif}")
-    st.write("Vue synthétique de l'état de conformité de votre client face aux exigences d'audit.")
+if choice == "📊 Dashboard Exécutif" and client_actif:
+    st.header(f"📊 Diagnostic de Sécurité — {client_actif}")
     
-    if df_controls_base is not None:
-        total_ctrls = len(df_controls_base.dropna(subset=[df_controls_base.columns[1]]))
-        saved_ctrls = db.get("statut_controles", {})
-        ready_audit = sum(1 for v in saved_ctrls.values() if v == "Ready for Audit")
-        approved = sum(1 for v in saved_ctrls.values() if v == "Approved by Auditor")
-        pct_soc2 = int(((ready_audit + approved) / total_ctrls) * 100) if total_ctrls > 0 else 0
-    else:
-        total_ctrls, pct_soc2 = 0, 0
+    # Calcul des pourcentages d'avancement réels
+    total_ctrls = len(df_controls_base) if df_controls_base is not None else 54
+    saved_ctrls = db.get("statut_controles", {})
+    ready_or_approved = sum(1 for v in saved_ctrls.values() if v in ["Ready for Audit", "Approved by Auditor"])
+    pct_soc2 = int((ready_or_approved / total_ctrls) * 100)
+    
+    total_tasks = len(df_readiness_base) if df_readiness_base is not None else 30
+    saved_tasks = db.get("statut_readiness", {})
+    done_tasks = sum(1 for v in saved_tasks.values() if v == "Done")
+    pct_readiness = int((done_tasks / total_tasks) * 100)
 
-    if df_readiness_base is not None:
-        total_tasks = len(df_readiness_base.dropna(subset=[df_readiness_base.columns[3]]))
-        saved_tasks = db.get("statut_readiness", {})
-        done_tasks = sum(1 for v in saved_tasks.values() if v == "Done")
-        pct_readiness = int((done_tasks / total_tasks) * 100) if total_tasks > 0 else 0
-    else:
-        total_tasks, pct_readiness = 0, 0
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric(label="Avancement SOC2", value=f"{pct_soc2}%", delta=f"{total_ctrls} contrôles")
-    col2.metric(label="Chantiers Techniques (Readiness)", value=f"{pct_readiness}%", delta=f"{total_tasks} jalons")
-    col3.metric(label="Risques & Tiers Enregistrés", value=len(db["risques"]), delta=f"{len(db['vendors'])} fournisseurs")
+    # Affichage des fiches de score (Metrics)
+    c1, c2, c3 = st.columns(3)
+    with c1: st.metric("Maturité SOC2 (Audit)", f"{pct_soc2}%", f"{ready_or_approved}/{total_ctrls} validés")
+    with c2: st.metric("Chantiers Techniques (Readiness)", f"{pct_readiness}%", f"{done_tasks}/{total_tasks} terminés")
+    with c3: st.metric("Menaces & Tiers", f"{len(db['risques'])} Risques", f"{len(db['vendors'])} Fournisseurs")
     
     st.markdown("---")
-    st.subheader("Feuille de route de la certification")
-    st.write("**Statut de la préparation technique (Readiness)**")
+    st.subheader("📈 Progression vers la conformité")
+    st.write("Plan de remédiation technique (Tâches Readiness)")
     st.progress(pct_readiness / 100)
-    st.write("**Niveau de maturité d'audit (SOC2 Control List)**")
+    st.write("Validation réglementaire des contrôles (SOC2 Controls)")
     st.progress(pct_soc2 / 100)
 
 # ----------------------------------------------------
-# 2. CONTRÔLES SOC2
+# 2. AUDIT SOC2
 # ----------------------------------------------------
-elif choice == "📋 Contrôles SOC2 (Audit)" and client_actif:
-    st.header(f"📋 Évaluation des 54 Contrôles SOC2 — {client_actif}")
-    st.caption("Qualifiez chaque point de contrôle et identifiez les 'Gaps' restants à corriger avant le passage de l'auditeur externe.")
+elif choice == "📋 Audit SOC2" and client_actif:
+    st.header(f"📋 Grille d'Audit SOC2 — {client_actif}")
     
     if df_controls_base is not None:
-        df = df_controls_base.dropna(subset=[df_controls_base.columns[1]]).copy()
+        search = st.text_input("🔍 Rechercher un critère, un mot-clé ou une preuve d'audit...")
+        df = df_controls_base.copy()
         
-        search = st.text_input("🔍 Filtrer les critères / preuves (ex: chiffrement, logs...)")
         if search:
             df = df[df.astype(str).apply(lambda x: x.str.contains(search, case=False)).any(axis=1)]
-
-        for _, row in df.iterrows():
-            ctrl_id = str(row.iloc[0])
-            ctrl_desc = str(row.iloc[1])
-            evidence = str(row.iloc[2]) if pd.notna(row.iloc[2]) else "Aucune preuve spécifiée"
             
-            current_status = db["statut_controles"].get(ctrl_id, str(row.iloc[4]) if pd.notna(row.iloc[4]) else "Gap")
+        for idx, row in df.iterrows():
+            c_id = str(row.iloc[0])
+            c_desc = str(row.iloc[1])
+            c_evidence = str(row.iloc[2]) if len(row) > 2 and pd.notna(row.iloc[2]) else "Aucune preuve requise listée"
             
-            with st.expander(f"🔹 {ctrl_id} — {ctrl_desc[:100]}..."):
-                st.markdown(f"**Description du contrôle :** {ctrl_desc}")
-                st.markdown(f"**Éléments de preuve requis :** `{evidence}`")
+            current_st = db["statut_controles"].get(c_id, "Gap")
+            
+            with st.expander(f"🔹 {c_id} — {c_desc[:90]}..."):
+                st.write(f"**Description complète du contrôle :** {c_desc}")
+                st.info(f"**Preuve attendue par l'auditeur :** {c_evidence}")
                 
-                options_status = ["Gap", "Ready for Audit", "Approved by Auditor"]
-                idx_default = options_status.index(current_status) if current_status in options_status else 0
-                
-                new_status = st.selectbox(f"Statut du contrôle {ctrl_id}", options_status, index=idx_default, key=f"ctrl_{client_actif}_{ctrl_id}")
-                
-                if new_status != current_status:
-                    db["statut_controles"][ctrl_id] = new_status
-                    save_client_file(client_actif, db)
-                    st.toast(f"Sauvegardé pour {client_actif}", icon="💾")
+                # Sélecteur de statut stylisé
+                opts = ["Gap", "Ready for Audit", "Approved by Auditor"]
+                new_st = st.selectbox("Changer le niveau de maturité :", opts, index=opts.index(current_st), key=f"soc2_{c_id}")
+                if new_st != current_st:
+                    db["statut_controles"][c_id] = new_st
+                    st.toast(f"Contrôle {c_id} mis à jour !", icon="💾")
     else:
-        st.error("Fichier modèle 'Control List.csv' introuvable.")
+        st.info("💡 **Étape Consultant :** Pour afficher la liste de vos 54 contrôles personnalisés, ouvrez le volet de gauche et déposez votre fichier 'Control List' (CSV).")
 
 # ----------------------------------------------------
-# 3. SUIVI DE PRÉPARATION (READINESS)
+# 3. READINESS
 # ----------------------------------------------------
-elif choice == "🎯 Préparation (Readiness)" and client_actif:
-    st.header(f"🎯 Plan d'action opérationnel (30 Tâches) — {client_actif}")
+elif choice == "🎯 Feuille de Route (Readiness)" and client_actif:
+    st.header(f"🎯 Plan d'Action Opérationnel — {client_actif}")
     
     if df_readiness_base is not None:
-        df_tasks = df_readiness_base.dropna(subset=[df_readiness_base.columns[3]]).copy()
-        
-        for _, row in df_tasks.iterrows():
-            t_id = str(row['Task #'])
-            t_desc = str(row['Task Description'])
-            section = str(row['Section'])
-            priority = str(row['Priority'])
+        df = df_readiness_base.copy()
+        for idx, row in df.iterrows():
+            t_id = str(row.iloc[0]) if pd.notna(row.iloc[0]) else f"T-{idx}"
+            t_desc = str(row.iloc[1]) if len(row) > 1 else "Pas de description"
             
-            current_task_status = db["statut_readiness"].get(t_id, str(row['Status']) if pd.notna(row['Status']) else "To Do")
+            current_t_st = db["statut_readiness"].get(t_id, "To Do")
             
             with st.container():
-                col_status, col_desc = st.columns([2, 8])
-                task_opts = ["To Do", "In Progress", "Done"]
-                t_idx = task_opts.index(current_task_status) if current_task_status in task_opts else 0
+                col_st, col_tx = st.columns([2, 8])
+                opts_t = ["To Do", "In Progress", "Done"]
+                new_t_st = col_st.selectbox(f"Statut {t_id}", opts_t, index=opts_t.index(current_t_st), key=f"ready_{t_id}")
                 
-                new_t_status = col_status.selectbox(f"Tâche {t_id}", task_opts, index=t_idx, key=f"tsk_{client_actif}_{t_id}")
+                col_tx.markdown(f"**{t_id}** — {t_desc}")
                 
-                prio_indicator = "🔴" if priority == "High" else "🟡" if priority == "Medium" else "🟢"
-                col_desc.markdown(f"**[{section}]** {t_desc} | Priorité : {prio_indicator} {priority}")
-                
-                if new_t_status != current_task_status:
-                    db["statut_readiness"][t_id] = new_t_status
-                    save_client_file(client_actif, db)
-                    st.toast("Tâche mise à jour", icon="✅")
+                if new_t_st != current_t_st:
+                    db["statut_readiness"][t_id] = new_t_st
+                    st.toast(f"Tâche {t_id} mise à jour !", icon="✅")
                 st.divider()
+    else:
+        st.info("💡 **Étape Consultant :** Glissez-déposez votre fichier 'Readiness' (CSV) dans le volet de gauche pour charger vos 30 tâches de préparation d'infrastructure.")
 
 # ----------------------------------------------------
 # 4. RISQUES & FOURNISSEURS
 # ----------------------------------------------------
-elif choice == "🎲 Gestion des Risques & Tiers" and client_actif:
-    st.header(f"🎲 Analyse de Risques & Cartographie des Tiers — {client_actif}")
+elif choice == "🎲 Risques & Fournisseurs" and client_actif:
+    st.header(f"🎲 Matrice des Risques et Gestion des Tiers — {client_actif}")
+    t1, t2 = st.tabs(["🎲 Risques Internes", "🏢 Évaluation Fournisseurs"])
     
-    tab1, tab2 = st.tabs(["🎲 Analyse des Risques", "🏢 Évaluation Fournisseurs"])
-    
-    with tab1:
-        st.subheader("Analyse des Menaces pour ce client")
-        with st.form("risk_consultant_form"):
-            desc = st.text_input("Risque identifié")
+    with t1:
+        with st.form("risk_f"):
+            r_desc = st.text_input("Menace / Risque identifié")
             vraisemblance = st.slider("Vraisemblance (1-5)", 1, 5, 2)
             impact = st.slider("Impact (1-5)", 1, 5, 2)
             if st.form_submit_button("Ajouter le risque"):
-                if desc:
-                    db["risques"].append({
-                        "Description": desc, "Vraisemblance": vraisemblance, 
-                        "Impact": impact, "Score": vraisemblance * impact
-                    })
-                    save_client_file(client_actif, db)
+                if r_desc:
+                    db["risques"].append({"Risque": r_desc, "Score": vraisemblance * impact})
                     st.rerun()
-        if db["risques"]:
-            st.dataframe(pd.DataFrame(db["risques"]), use_container_width=True)
-
-    with tab2:
-        st.subheader("Cartographie et criticité des sous-traitants")
-        with st.form("vendor_consultant_form"):
-            v_name = st.text_input("Nom du tiers")
+        if db["risques"]: st.dataframe(pd.DataFrame(db["risques"]), use_container_width=True)
+        
+    with t2:
+        with st.form("vendor_f"):
+            v_name = st.text_input("Nom du sous-traitant (SaaS, Hébergeur...)")
             crit = st.selectbox("Criticité", ["Haute", "Moyenne", "Faible"])
-            if st.form_submit_button("Ajouter le sous-traitant"):
+            if st.form_submit_button("Enregistrer le fournisseur"):
                 if v_name:
                     db["vendors"].append({"Nom": v_name, "Criticité": crit})
-                    save_client_file(client_actif, db)
                     st.rerun()
-        if db["vendors"]:
-            st.dataframe(pd.DataFrame(db["vendors"]), use_container_width=True)
+        if db["vendors"]: st.dataframe(pd.DataFrame(db["vendors"]), use_container_width=True)
 
 # ----------------------------------------------------
 # 5. POLITIQUES DOCUMENTAIRES
 # ----------------------------------------------------
-elif choice == "📜 Politiques & ISO27001" and client_actif:
-    st.header(f"📜 Chantier Documentaire — {client_actif}")
-    st.write("Suivez l'état d'avancement de la rédaction des politiques de sécurité obligatoires.")
+elif choice == "📜 Politiques Documentaires" and client_actif:
+    st.header(f"📜 Suivi des Politiques Obligatoires (ISO/SOC2) — {client_actif}")
     
     for policy, status in db["policies"].items():
         with st.container():
-            col_p_name, col_p_stat = st.columns([6, 3])
-            col_p_name.markdown(f"📄 **{policy}**")
-            
-            opts_p = ["À rédiger", "En cours de revue", "Approuvée & Publiée"]
-            idx_p = opts_p.index(status) if status in opts_p else 0
-            
-            new_p_status = col_p_stat.selectbox("Statut du document", opts_p, index=idx_p, key=f"pol_{client_actif}_{policy}")
-            
-            if new_p_status != status:
-                db["policies"][policy] = new_p_status
-                save_client_file(client_actif, db)
-                st.toast("Document mis à jour", icon="📝")
+            c_name, c_select = st.columns([6, 3])
+            c_name.markdown(f"📄 **{policy}**")
+            p_opts = ["À rédiger", "En cours de rédaction", "Approuvée & Diffusée"]
+            new_p_st = c_select.selectbox("Statut", p_opts, index=p_opts.index(status), key=f"pol_{policy}")
+            if new_p_st != status:
+                db["policies"][policy] = new_p_st
+                st.toast(f"Document {policy} mis à jour", icon="📝")
             st.divider()
